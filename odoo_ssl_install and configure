@@ -1,0 +1,84 @@
+Step-by-Step Guide
+1. Install Certbot
+Install Certbot to manage Let's Encrypt certificates:
+
+bash
+Copy code
+sudo apt update
+sudo apt install certbot python3-certbot-nginx
+2. Configure Nginx for Odoo
+Create or edit the Nginx configuration file for your Odoo instance:
+
+bash
+Copy code
+sudo nano /etc/nginx/sites-available/odoo
+Add the following configuration (replace yourdomain.com with your domain):
+
+nginx
+Copy code
+server {
+    listen 80;
+    server_name yourdomain.com www.yourdomain.com;
+
+    location / {
+        proxy_pass http://127.0.0.1:8069;  # Odoo runs on port 8069 by default
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forward-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto http;
+    }
+
+    access_log /var/log/nginx/odoo.access.log;
+    error_log /var/log/nginx/odoo.error.log;
+}
+Enable the configuration:
+
+bash
+Copy code
+sudo ln -s /etc/nginx/sites-available/odoo /etc/nginx/sites-enabled/
+Test the configuration:
+
+bash
+Copy code
+sudo nginx -t
+Reload Nginx:
+
+bash
+Copy code
+sudo systemctl reload nginx
+3. Obtain a Let's Encrypt Certificate
+Run Certbot to obtain a certificate and configure SSL:
+
+bash
+Copy code
+sudo certbot --nginx -d yourdomain.com -d www.yourdomain.com
+Certbot will:
+
+Obtain the SSL certificate.
+Automatically update the Nginx configuration for SSL.
+4. Configure Automatic Renewal
+Let's Encrypt certificates expire every 90 days. Set up automatic renewal:
+
+bash
+Copy code
+sudo systemctl enable certbot.timer
+sudo certbot renew --dry-run
+The --dry-run command tests the renewal process to ensure it works.
+
+5. Verify the Configuration
+Visit your domain (https://yourdomain.com) to verify the SSL certificate and Odoo setup.
+
+Optional: Adjust Odoo Configuration
+If you want to ensure proper handling of SSL in Odoo:
+
+Edit the Odoo configuration file (e.g., /etc/odoo/odoo.conf).
+Add or update the following line:
+ini
+Copy code
+proxy_mode = True
+Restart the Odoo service:
+bash
+Copy code
+sudo systemctl restart odoo
+This ensures that Odoo handles the HTTPS headers properly.
+
